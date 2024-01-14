@@ -558,16 +558,20 @@ public:
 	static int random(int from, int to);
 
 	static _ALWAYS_INLINE_ bool is_equal_approx(float a, float b) {
-		// Check for exact equality first, required to handle "infinity" values.
-		if (a == b) {
+		// Pretty much taken from: https://floating-point-gui.de/errors/comparison/
+		const float absA = abs(a);
+		const float absB = abs(b);
+		const float diff = abs(a - b);
+
+		if (a == b) { // shortcut, handles infinities
 			return true;
+    	} else if (a == 0 || b == 0 || (absA + absB < FLT_MIN)) {
+			// a or b is zero or both are extremely close to it
+			// relative error is less meaningful here
+			return diff < (CMP_EPSILON * FLT_MIN);
+		} else { // use relative error
+			return diff / MIN((absA + absB), FLT_MAX) < CMP_EPSILON;
 		}
-		// Then check for approximate equality.
-		float tolerance = (float)CMP_EPSILON * abs(a);
-		if (tolerance < (float)CMP_EPSILON) {
-			tolerance = (float)CMP_EPSILON;
-		}
-		return abs(a - b) < tolerance;
 	}
 
 	static _ALWAYS_INLINE_ bool is_equal_approx(float a, float b, float tolerance) {

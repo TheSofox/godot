@@ -511,6 +511,132 @@ TEST_CASE("[Math] larger_prime") {
 	ERR_PRINT_ON;
 }
 
+// Tests based off of https://floating-point-gui.de/errors/NearlyEqualsTest.java.
+TEST_CASE_TEMPLATE("[Math] is_equal_approx", T, float, double) {
+	// Positive large numbers.
+	CHECK(Math::is_equal_approx((T)1000000, (T)1000001));
+	CHECK(Math::is_equal_approx((T)1000001, (T)1000000));
+	CHECK_FALSE(Math::is_equal_approx((T)10000, (T)10001));
+	CHECK_FALSE(Math::is_equal_approx((T)10001, (T)10000));
+
+	// Negative large lumbers.
+	CHECK(Math::is_equal_approx((T)-1000000, (T)-1000001));
+	CHECK(Math::is_equal_approx((T)-1000001, (T)-1000000));
+	CHECK_FALSE(Math::is_equal_approx((T)-10000, (T)-10001));
+	CHECK_FALSE(Math::is_equal_approx((T)-10001, (T)-10000));
+
+	// Numbers around 1.
+	CHECK(Math::is_equal_approx((T)1.0000001, (T)1.0000002));
+	CHECK(Math::is_equal_approx((T)1.0000002, (T)1.0000001));
+	CHECK_FALSE(Math::is_equal_approx((T)1.0002, (T)1.0001));
+	CHECK_FALSE(Math::is_equal_approx((T)1.0001, (T)1.0002));
+
+	// Numbers around -1.
+	CHECK(Math::is_equal_approx((T)-1.000001, (T)-1.000002));
+	CHECK(Math::is_equal_approx((T)-1.000002, (T)-1.000001));
+	CHECK_FALSE(Math::is_equal_approx((T)-1.0001, (T)-1.0002));
+	CHECK_FALSE(Math::is_equal_approx((T)-1.0002, (T)-1.0001));
+
+	// Numbers between 1 and 0.
+	CHECK(Math::is_equal_approx((T)0.000000001000001, (T)0.000000001000002));
+	CHECK(Math::is_equal_approx((T)0.000000001000002, (T)0.000000001000001));
+	CHECK_FALSE(Math::is_equal_approx((T)0.000000000001002, (T)0.000000000001001));
+	CHECK_FALSE(Math::is_equal_approx((T)0.000000000001001, (T)0.000000000001002));
+
+	// Numbers between -1 and 0.
+	CHECK(Math::is_equal_approx((T)-0.000000001000001, (T)-0.000000001000002));
+	CHECK(Math::is_equal_approx((T)-0.000000001000002, (T)-0.000000001000001));
+	CHECK_FALSE(Math::is_equal_approx((T)-0.000000000001002, (T)-0.000000000001001));
+	CHECK_FALSE(Math::is_equal_approx((T)-0.000000000001001, (T)-0.000000000001002));
+
+	// Small differences away from zero.
+	CHECK(Math::is_equal_approx((T)0.3, (T)0.30000003));
+	CHECK(Math::is_equal_approx((T)-0.3, (T)-0.30000003));
+
+	// Comparisons involving 0.
+	CHECK(Math::is_equal_approx((T)0.0, (T)0.0));
+	CHECK(Math::is_equal_approx((T)0.0, (T)-0.0));
+	CHECK(Math::is_equal_approx((T)-0.0, (T)-0.0));
+	CHECK_FALSE(Math::is_equal_approx((T)0.00000001, (T)0.0));
+	CHECK_FALSE(Math::is_equal_approx((T)0.0, (T)0.00000001));
+	CHECK_FALSE(Math::is_equal_approx((T)-0.00000001, (T)0.0));
+	CHECK_FALSE(Math::is_equal_approx((T)0.0, (T)-0.00000001));
+
+	//
+	/*CHECK(Math::is_equal_approx((T)0.0, (T)1e-40, (T)0.01));
+	CHECK(Math::is_equal_approx((T)1e-40, (T)0.0, (T)0.01));
+	CHECK_FALSE(Math::is_equal_approx((T)1e-40, (T)0.0, (T)0.000001));
+	CHECK_FALSE(Math::is_equal_approx((T)0.0, (T)1e-40, (T)0.000001));
+
+	CHECK(Math::is_equal_approx((T)0.0, (T)-1e-40, (T)0.1));
+	CHECK(Math::is_equal_approx((T)-1e-40, (T)0.0, (T)0.1));
+	CHECK_FALSE(Math::is_equal_approx((T)-1e-40, (T)0.0, (T)0.00000001));
+	CHECK_FALSE(Math::is_equal_approx((T)0.0, (T)-1e-40, (T)0.00000001));*/
+
+	T value_max;
+	T value_min;
+	T infinity = (T)INFINITY;
+	T nan = (T)NAN;
+	if (std::is_same<T, float>::value) {
+		value_max = FLT_MAX;
+		value_min = FLT_MIN;
+	} else {
+		value_max = DBL_MAX;
+		value_min = DBL_MIN;
+	}
+
+	CHECK(Math::is_equal_approx((T)value_max, (T)value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)value_max, (T)-value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)-value_max, (T)value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)value_max, (T)value_max / 2));
+	CHECK_FALSE(Math::is_equal_approx((T)value_max, (T)-value_max / 2));
+	CHECK_FALSE(Math::is_equal_approx((T)-value_max, (T)value_max / 2));
+
+	CHECK(Math::is_equal_approx((T)infinity, (T)infinity));
+	CHECK(Math::is_equal_approx((T)-infinity, (T)-infinity));
+	CHECK_FALSE(Math::is_equal_approx((T)-infinity, (T)infinity));
+	CHECK_FALSE(Math::is_equal_approx((T)infinity, (T)value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)-infinity, (T)-value_max));
+
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)(float)0.0));
+	CHECK_FALSE(Math::is_equal_approx((T)(float)-0.0, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)(float)-0.0));
+	CHECK_FALSE(Math::is_equal_approx((T)(float)0.0, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)infinity));
+	CHECK_FALSE(Math::is_equal_approx((T)infinity, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)-infinity));
+	CHECK_FALSE(Math::is_equal_approx((T)-infinity, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)value_max, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)-value_max));
+	CHECK_FALSE(Math::is_equal_approx((T)-value_max, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)value_min));
+	CHECK_FALSE(Math::is_equal_approx((T)value_min, (T)nan));
+	CHECK_FALSE(Math::is_equal_approx((T)nan, (T)-value_min));
+	CHECK_FALSE(Math::is_equal_approx((T)-value_min, (T)nan));
+
+	CHECK_FALSE(Math::is_equal_approx((T)1.000000001, (T)-1.0));
+	CHECK_FALSE(Math::is_equal_approx((T)-1.0, (T)1.000000001));
+	CHECK_FALSE(Math::is_equal_approx((T)-1.000000001, (T)1.0));
+	CHECK_FALSE(Math::is_equal_approx((T)1.0, (T)-1.000000001));
+	CHECK(Math::is_equal_approx((T)10 * value_min, (T)10 * -value_min));
+	CHECK_FALSE(Math::is_equal_approx((T)10000 * value_min, (T)10000 * -value_min));
+
+	CHECK(Math::is_equal_approx((T)value_min, (T)value_min));
+	CHECK(Math::is_equal_approx((T)value_min, (T)-value_min));
+	CHECK(Math::is_equal_approx((T)-value_min, (T)value_min));
+	CHECK(Math::is_equal_approx((T)value_min, (T)0));
+	CHECK(Math::is_equal_approx((T)0, (T)value_min));
+	CHECK(Math::is_equal_approx((T)-value_min, (T)0));
+	CHECK(Math::is_equal_approx((T)0, (T)-value_min));
+
+	CHECK_FALSE(Math::is_equal_approx((T)0.000000001, (T)-value_min));
+	CHECK_FALSE(Math::is_equal_approx((T)0.000000001, (T)value_min));
+	CHECK_FALSE(Math::is_equal_approx((T)value_min, (T)0.000000001));
+	CHECK_FALSE(Math::is_equal_approx((T)-value_min, (T)0.000000001));
+}
+
 TEST_CASE_TEMPLATE("[Math] fmod", T, float, double) {
 	CHECK(Math::fmod((T)-2.0, (T)0.3) == doctest::Approx((T)-0.2));
 	CHECK(Math::fmod((T)0.0, (T)0.3) == doctest::Approx((T)0.0));
